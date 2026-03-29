@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="af">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Evangelie Onbeskaamd</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #0d4f4f;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: rgba(255,255,255,0.95);
+    border-radius: 16px;
+    padding: 28px 20px;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  }
+  .cross { font-size: 36px; color: #b8a832; margin-bottom: 8px; }
+  h1 { font-size: 20px; color: #0d4f4f; margin-bottom: 4px; font-weight: 700; }
+  .subtitle { font-size: 13px; color: #888; margin-bottom: 20px; }
+  .question { font-size: 17px; color: #333; font-weight: 600; margin-bottom: 8px; line-height: 1.5; }
+  .hint { font-size: 12px; color: #999; margin-bottom: 16px; }
+  .options { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 16px; }
+  .option {
+    padding: 10px 16px; border: 2px solid #ddd; border-radius: 24px;
+    font-size: 14px; font-family: inherit; font-weight: 500; color: #333;
+    background: #fff; cursor: pointer; transition: all 0.2s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .option:active { transform: scale(0.95); }
+  .option.selected { border-color: #0d4f4f; background: #0d4f4f; color: #fff; }
+
+  .divider { display: flex; align-items: center; gap: 12px; margin: 4px 0 12px; color: #aaa; font-size: 12px; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #ddd; }
+
+  .custom-section { margin-bottom: 8px; }
+  .custom-row { display: flex; gap: 8px; margin-bottom: 6px; }
+  .custom-row input {
+    flex: 1; padding: 12px 14px; font-size: 15px; border: 2px solid #ddd;
+    border-radius: 10px; font-family: inherit; outline: none; transition: border-color 0.2s;
+  }
+  .custom-row input:focus { border-color: #0d4f4f; }
+  .add-btn {
+    padding: 10px 14px; font-size: 18px; font-weight: 700; background: #eee;
+    color: #0d4f4f; border: 2px solid #ddd; border-radius: 10px; cursor: pointer;
+    font-family: inherit; line-height: 1;
+  }
+  .add-btn:active { background: #ddd; }
+  .remove-btn {
+    padding: 10px 14px; font-size: 16px; background: #fee; color: #e53e3e;
+    border: 2px solid #fcc; border-radius: 10px; cursor: pointer; line-height: 1;
+  }
+
+  /* Selected summary */
+  .summary {
+    margin: 16px 0 8px;
+    padding: 12px;
+    background: #f0f9f9;
+    border-radius: 10px;
+    border: 1px solid #d0e8e8;
+    display: none;
+  }
+  .summary.show { display: block; }
+  .summary-label { font-size: 11px; color: #888; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+  .summary-words { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+  .summary-word {
+    padding: 4px 12px; background: #0d4f4f; color: #fff;
+    border-radius: 16px; font-size: 13px; font-weight: 600;
+  }
+
+  .submit-btn {
+    width: 100%; padding: 14px; font-size: 16px; font-weight: 700;
+    background: #b8a832; color: #fff; border: none; border-radius: 10px;
+    margin-top: 12px; cursor: pointer; font-family: inherit;
+  }
+  .submit-btn:active { background: #9a8c28; }
+  .submit-btn:disabled { background: #aaa; }
+
+  .success { display: none; padding: 20px 0; }
+  .success .check { font-size: 48px; margin-bottom: 12px; color: #0d4f4f; }
+  .success p { font-size: 16px; color: #333; line-height: 1.5; }
+  .error { color: #e53e3e; font-size: 13px; margin-top: 8px; display: none; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div id="form-view">
+    <div class="cross">✝</div>
+    <h1>Evangelie Onbeskaamd</h1>
+    <div class="subtitle">Romeine 1:16-17</div>
+    <div class="question">Wat dink jy het jy van God nodig?</div>
+    <div class="hint">Kies soveel as wat jy wil en/of voeg jou eie by</div>
+
+    <div class="options" id="options">
+      <button class="option" type="button">Genesing</button>
+      <button class="option" type="button">Vrede</button>
+      <button class="option" type="button">Finansies</button>
+      <button class="option" type="button">Rigting</button>
+      <button class="option" type="button">Huwelik</button>
+      <button class="option" type="button">Werk</button>
+      <button class="option" type="button">Krag</button>
+      <button class="option" type="button">Geduld</button>
+      <button class="option" type="button">Vergifnis</button>
+      <button class="option" type="button">Hoop</button>
+      <button class="option" type="button">Vreugde</button>
+      <button class="option" type="button">Wysheid</button>
+      <button class="option" type="button">Doelgerigtheid</button>
+      <button class="option" type="button">Bevryding</button>
+      <button class="option" type="button">Gemoedsrus</button>
+      <button class="option" type="button">Antwoorde</button>
+      <button class="option" type="button">Kinders</button>
+      <button class="option" type="button">Aanvaarding</button>
+      <button class="option" type="button">Dissipline</button>
+      <button class="option" type="button">Moed</button>
+      <button class="option" type="button">Liefde</button>
+    </div>
+
+    <div class="divider">voeg jou eie by</div>
+
+    <div class="custom-section" id="custom-section">
+      <div class="custom-row">
+        <input type="text" class="custom-input" placeholder="Jou woord..." maxlength="30" autocomplete="off" />
+        <button type="button" class="add-btn" id="add-custom-btn">+</button>
+      </div>
+    </div>
+
+    <div class="summary" id="summary">
+      <div class="summary-label">Jou keuses</div>
+      <div class="summary-words" id="summary-words"></div>
+    </div>
+
+    <button class="submit-btn" id="submit-btn" type="button">Stuur</button>
+
+    <div class="error" id="error-msg"></div>
+  </div>
+
+  <div class="success" id="success-view">
+    <div class="check">✓</div>
+    <p><strong>Dankie!</strong><br>Jou woorde is ontvang.</p>
+  </div>
+</div>
+
+<script>
+  // === PASTE YOUR SUPABASE CREDENTIALS HERE ===
+  var SUPABASE_URL = 'https://qjysqrekjroqaprdwaub.supabase.co';
+  var SUPABASE_ANON_KEY = 'sb_publishable_FESRTaVRzuVG31NnOc_v_w_fe7VT94u';
+  // =============================================
+
+  var db = null;
+  var customWords = [];
+
+  function initSupabase() {
+    db = (window.supabase.createClient || window.supabase)(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('Supabase connected');
+  }
+
+  // Gather all selected words (predefined + custom)
+  function getAllWords() {
+    var words = [];
+    var selected = document.querySelectorAll('.option.selected');
+    for (var i = 0; i < selected.length; i++) {
+      words.push(selected[i].textContent);
+    }
+    // Add custom words
+    words = words.concat(customWords);
+    // Check if there's text in the last custom input that wasn't added yet
+    var inputs = document.querySelectorAll('.custom-input');
+    var lastInput = inputs[inputs.length - 1];
+    if (lastInput && lastInput.value.trim()) {
+      words.push(lastInput.value.trim().substring(0, 30));
+    }
+    return words;
+  }
+
+  // Update the summary display
+  function updateSummary() {
+    var words = getAllWords();
+    var summary = document.getElementById('summary');
+    var summaryWords = document.getElementById('summary-words');
+
+    if (words.length > 0) {
+      summary.classList.add('show');
+      summaryWords.innerHTML = '';
+      words.forEach(function(w) {
+        var span = document.createElement('span');
+        span.className = 'summary-word';
+        span.textContent = w;
+        summaryWords.appendChild(span);
+      });
+    } else {
+      summary.classList.remove('show');
+    }
+  }
+
+  // Toggle predefined option
+  function toggleOption(el) {
+    el.classList.toggle('selected');
+    updateSummary();
+  }
+
+  // Add custom word
+  function addCustomWord() {
+    var inputs = document.querySelectorAll('.custom-input');
+    var lastInput = inputs[inputs.length - 1];
+    var word = lastInput.value.trim();
+
+    if (!word) return;
+
+    // Save the word
+    customWords.push(word.substring(0, 30));
+    lastInput.value = '';
+    lastInput.disabled = true;
+    lastInput.style.background = '#f0f0f0';
+    lastInput.style.color = '#0d4f4f';
+    lastInput.value = word;
+
+    // Change the + button to a remove button
+    var row = lastInput.parentElement;
+    var addBtn = row.querySelector('.add-btn');
+    if (addBtn) {
+      addBtn.className = 'remove-btn';
+      addBtn.textContent = '×';
+      addBtn.onclick = function() { removeCustomWord(row, word); };
+    }
+
+    // Add a new empty input row
+    var newRow = document.createElement('div');
+    newRow.className = 'custom-row';
+    newRow.innerHTML = '<input type="text" class="custom-input" placeholder="Nog \'n woord..." maxlength="30" autocomplete="off" />' +
+      '<button type="button" class="add-btn">+</button>';
+
+    var newAddBtn = newRow.querySelector('.add-btn');
+    newAddBtn.addEventListener('click', addCustomWord);
+
+    var newInput = newRow.querySelector('.custom-input');
+    newInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') addCustomWord();
+    });
+    newInput.addEventListener('input', updateSummary);
+
+    document.getElementById('custom-section').appendChild(newRow);
+    newInput.focus();
+
+    updateSummary();
+  }
+
+  // Remove a custom word
+  function removeCustomWord(row, word) {
+    customWords = customWords.filter(function(w) { return w !== word; });
+    row.remove();
+    updateSummary();
+  }
+
+  // Submit everything
+  async function submitAll() {
+    var words = getAllWords();
+    var error = document.getElementById('error-msg');
+    var btn = document.getElementById('submit-btn');
+    error.style.display = 'none';
+
+    if (words.length === 0) {
+      error.textContent = 'Kies of tik asseblief ten minste een woord.';
+      error.style.display = 'block';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Stuur...';
+
+    try {
+      var rows = words.map(function(w) { return { word: w }; });
+      var result = await db.from('words').insert(rows);
+
+      if (result.error) throw result.error;
+
+      document.getElementById('form-view').style.display = 'none';
+      document.getElementById('success-view').style.display = 'block';
+    } catch (e) {
+      console.error('Submit error:', e);
+      error.textContent = 'Iets het fout gegaan. Probeer weer.';
+      error.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Stuur';
+    }
+  }
+
+  // Wire up everything
+  document.addEventListener('DOMContentLoaded', function() {
+    initSupabase();
+
+    // Predefined option buttons
+    var options = document.querySelectorAll('.option');
+    for (var i = 0; i < options.length; i++) {
+      options[i].addEventListener('click', function() { toggleOption(this); });
+    }
+
+    // Add custom word button
+    document.getElementById('add-custom-btn').addEventListener('click', addCustomWord);
+
+    // Enter key on first custom input
+    document.querySelector('.custom-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') addCustomWord();
+    });
+
+    // Custom input change updates summary
+    document.querySelector('.custom-input').addEventListener('input', updateSummary);
+
+    // Single submit button
+    document.getElementById('submit-btn').addEventListener('click', submitAll);
+  });
+</script>
+</body>
+</html>
